@@ -189,6 +189,20 @@ describe Scan do
       end
 
       it "uses multiple devices" do
+        device = "device"
+        system_profiler_output = '<?xml version="1.0" encoding="UTF-8"?>
+                                  <array>
+                                  	<dict>
+                                  		<key>_items</key>
+                                  		<array/>
+                                  	</dict>
+                                  </array>'
+
+        expect(device).to receive(:read).and_return(system_profiler_output)
+        expect(Open3).to receive(:popen3).with("system_profiler SPUSBDataType -xml").and_yield(nil, device, nil, nil)
+        expect(device).to receive(:read).and_return(system_profiler_output)
+        expect(Open3).to receive(:popen3).with("system_profiler SPUSBDataType -xml").and_yield(nil, device, nil, nil)
+
         options = { project: "./examples/standard/app.xcodeproj", devices: [
           "iPhone 6s (9.3)",
           "iPad Air (9.3)"

@@ -62,14 +62,14 @@ module Scan
           # Default to Xcode target version if no device version is specified.
           lookup_device = lookup_device + " " + xcode_target unless has_version
 
-          found = FastlaneCore::Simulator.all.detect do |d|
+          found = FastlaneCore::DeviceManager.all('iOS').detect do |d|
             (d.name + " " + d.ios_version).include? lookup_device
           end
 
           if found
             found_devices.push(found)
           else
-            UI.error("Ignoring '#{device}', couldn't find matching simulator")
+            UI.error("Ignoring '#{device}', couldn't find matching device")
           end
         end
 
@@ -77,11 +77,13 @@ module Scan
           Scan.devices = found_devices
           return
         else
-          UI.error("Couldn't find any matching simulators for '#{devices}' - falling back to default simulator")
+          UI.error("Couldn't find any matching device for '#{devices}' - falling back to default simulator")
         end
       end
 
-      sims = FastlaneCore::Simulator.all
+      sims = FastlaneCore::DeviceManager.simulators('iOS')
+      xcode_target = Scan.project.build_settings(key: "IPHONEOS_DEPLOYMENT_TARGET")
+
       sims = filter_simulators(sims, xcode_target)
 
       # An iPhone 5s is reasonable small and useful for tests
@@ -104,14 +106,14 @@ module Scan
         devices.each do |device|
           lookup_device = device.to_s.strip.tr('()', '') # Remove parenthesis
 
-          found = FastlaneCore::SimulatorTV.all.detect do |d|
+          found = FastlaneCore::DeviceManager.all('tvOS').detect do |d|
             (d.name + " " + d.os_version).include? lookup_device
           end
 
           if found
             found_devices.push(found)
           else
-            UI.error("Ignoring '#{device}', couldn't find matching simulator")
+            UI.error("Ignoring '#{device}', couldn't find matching device")
           end
         end
 
@@ -119,11 +121,11 @@ module Scan
           Scan.devices = found_devices
           return
         else
-          UI.error("Couldn't find any matching simulators for '#{devices}' - falling back to default simulator")
+          UI.error("Couldn't find any matching device for '#{devices}' - falling back to default simulator")
         end
       end
 
-      sims = FastlaneCore::SimulatorTV.all
+      sims = FastlaneCore::DeviceManager.simulators('tvOS')
       xcode_target = Scan.project.build_settings(key: "TVOS_DEPLOYMENT_TARGET")
       sims = filter_simulators(sims, xcode_target)
 
@@ -154,12 +156,24 @@ module Scan
 
       # building up the destination now
       if Scan.project.ios?
-        Scan.config[:destination] = Scan.devices.map { |d| "platform=iOS Simulator,id=#{d.udid}" }
+        Scan.config[:destination] = Scan.devices.map { |d| self.destination("iOS", d) }
       elsif Scan.project.tvos?
-        Scan.config[:destination] = Scan.devices.map { |d| "platform=tvOS Simulator,id=#{d.udid}" }
+        Scan.config[:destination] = Scan.devices.map { |d| self.destination("tvOS", d) }
       else
-        Scan.config[:destination] = min_xcode8? ? ["platform=macOS"] : ["platform=OS X"]
+        Scan.config[:destination] = min_xcode8? ? [self.destination("macOS", nil)] : [self.destination("OS X", nil)]
       end
+    end
+
+    def self.destination(platform, device)
+      destination = "platform=#{platform}"
+      unless device.nil?
+        if device.is_simulator
+          destination += " Simulator"
+        end
+        destination += ",id=#{device.udid}"
+      end
+
+      return destination
     end
   end
 end

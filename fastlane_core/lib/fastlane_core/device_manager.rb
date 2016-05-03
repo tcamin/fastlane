@@ -71,11 +71,13 @@ module FastlaneCore
 
         device_uuids = []
         result = Plist.parse_xml(usb_devices_output)
-        result[0]['_items'].each do |host_controller| # loop just incase the host system has more then 1 controller
-          host_controller['_items'].each do |usb_device|
-            is_supported_device = device_types.any? { |device_type| usb_device['_name'] == device_type }
-            if is_supported_device && usb_device['serial_num'].length == 40
-              device_uuids.push(usb_device['serial_num'])
+        if !result.nil? && !result.first.nil?
+          result.first['_items'].each do |host_controller| # loop just incase the host system has more then 1 controller
+            host_controller['_items'].each do |usb_device|
+              is_supported_device = device_types.any? { |device_type| usb_device['_name'] == device_type }
+              if is_supported_device && usb_device['serial_num'].length == 40
+                device_uuids.push(usb_device['serial_num'])
+              end
             end
           end
         end
