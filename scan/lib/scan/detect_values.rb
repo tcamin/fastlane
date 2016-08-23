@@ -77,7 +77,8 @@ module Scan
           Scan.devices = found_devices
           return
         else
-          UI.error("Couldn't find any matching device for '#{devices}' - falling back to default simulator")
+          UI.error("Couldn't find any matching device for '#{devices}' - quitting")
+          return
         end
       end
 
@@ -121,7 +122,8 @@ module Scan
           Scan.devices = found_devices
           return
         else
-          UI.error("Couldn't find any matching device for '#{devices}' - falling back to default simulator")
+          UI.error("Couldn't find any matching device for '#{devices}' - quitting")
+          return
         end
       end
 
